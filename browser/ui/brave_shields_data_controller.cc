@@ -10,6 +10,7 @@
 
 #include "brave/components/brave_shields/browser/brave_shields_util.h"
 #include "brave/components/brave_shields/common/brave_shield_constants.h"
+#include "brave/components/ipfs/buildflags/buildflags.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/content_settings/host_content_settings_map_factory.h"
 #include "chrome/browser/profiles/profile.h"
@@ -18,6 +19,15 @@
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/web_contents.h"
 #include "net/base/url_util.h"
+
+#if BUILDFLAG(ENABLE_IPFS)
+#include "brave/browser/ipfs/ipfs_service_factory.h"
+#include "brave/components/ipfs/ipfs_constants.h"
+#include "brave/components/ipfs/ipfs_utils.h"
+#include "chrome/common/channel_info.h"
+#include "components/prefs/pref_service.h"
+#include "components/user_prefs/user_prefs.h"
+#endif
 
 using net::AppendQueryParameter;
 
@@ -75,10 +85,8 @@ void BraveShieldsDataController::OnFaviconUpdated(
     const GURL& icon_url,
     bool icon_url_changed,
     const gfx::Image& image) {
-  if (icon_url_changed) {
-    for (Observer& obs : observer_list_)
-      obs.OnFaviconUpdated();
-  }
+  for (Observer& obs : observer_list_)
+    obs.OnFaviconUpdated();
 }
 
 void BraveShieldsDataController::ReloadWebContents() {
@@ -156,7 +164,25 @@ void BraveShieldsDataController::SetBraveShieldsEnabled(bool is_enabled) {
 }
 
 GURL BraveShieldsDataController::GetCurrentSiteURL() {
-  return web_contents()->GetLastCommittedURL();
+  GURL url = web_contents()->GetLastCommittedURL();
+
+#if BUILDFLAG(ENABLE_IPFS)
+  auto* ctx = web_contents()->GetBrowserContext();
+
+  if (ipfs::IpfsServiceFactory::IsIpfsEnabled(ctx) &&
+      url.SchemeIs(ipfs::kIPNSScheme)) {
+    GURL ipfs_gateway_url;
+    auto* prefs = user_prefs::UserPrefs::Get(ctx);
+
+    if (ipfs::ResolveIPFSURI(prefs, chrome::GetChannel(), url,
+                             &ipfs_gateway_url) ||
+        !ipfs_gateway_url.is_valid()) {
+      url = ipfs_gateway_url;
+    }
+  }
+#endif
+
+  return url;
 }
 
 GURL BraveShieldsDataController::GetFaviconURL(bool refresh) {

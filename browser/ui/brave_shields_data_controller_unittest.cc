@@ -10,6 +10,8 @@
 #include "brave/components/brave_shields/common/brave_shield_constants.h"
 #include "brave/components/brave_shields/common/brave_shields_panel.mojom.h"
 #include "brave/components/brave_shields/common/features.h"
+#include "brave/components/ipfs/ipfs_constants.h"
+#include "brave/components/ipfs/pref_names.h"
 #include "build/build_config.h"
 #include "chrome/browser/content_settings/host_content_settings_map_factory.h"
 #include "chrome/test/base/testing_browser_process.h"
@@ -55,6 +57,9 @@ class BraveShieldsDataControllerTest : public testing::Test {
     ASSERT_TRUE(profile_manager_->SetUp());
     profile_ = profile_manager_->CreateTestingProfile(kTestProfileName);
 
+    profile_->GetPrefs()->SetString(kIPFSPublicGatewayAddress,
+                                    ipfs::kDefaultIPFSLocalGateway);
+
     test_web_contents_ =
         content::WebContentsTester::CreateTestWebContents(profile_, nullptr);
     favicon::ContentFaviconDriver::CreateForWebContents(
@@ -70,6 +75,7 @@ class BraveShieldsDataControllerTest : public testing::Test {
 
   Profile* profile() { return profile_; }
   content::WebContents* web_contents() { return test_web_contents_.get(); }
+  PrefService* prefs() { return profile_->GetPrefs(); }
 
   void SetLastCommittedUrl(const GURL& url) {
     content::WebContentsTester::For(web_contents())->SetLastCommittedURL(url);
@@ -376,4 +382,19 @@ TEST_F(BraveShieldsDataControllerTest, Observer_OnShieldsEnabledChangedTest) {
 
   ctrl_2->RemoveObserver(&observer_2);
   ctrl_3->RemoveObserver(&observer_3);
+}
+
+TEST_F(BraveShieldsDataControllerTest, GetCurrentSiteURL) {
+  SetLastCommittedUrl(GURL("http://brave.com"));
+  auto* controller = GetShieldsDataController();
+
+  EXPECT_EQ(controller->GetCurrentSiteURL(), GURL("http://brave.com"));
+
+  SetLastCommittedUrl(GURL("ipns://ipfs.io"));
+  EXPECT_EQ(controller->GetCurrentSiteURL(),
+            GURL("http://ipfs.io.ipns.localhost"));
+
+  prefs()->SetString(kIPFSPublicGatewayAddress, ipfs::kDefaultIPFSGateway);
+  EXPECT_EQ(controller->GetCurrentSiteURL(),
+            GURL("https://ipfs.io.ipns.dweb.link"));
 }
