@@ -1907,7 +1907,7 @@ void AdsServiceImpl::ShowNotification(const ads::AdNotificationInfo& info) {
     std::unique_ptr<message_center::Notification> notification =
         std::make_unique<message_center::Notification>(
             message_center::NOTIFICATION_TYPE_SIMPLE, info.placement_id, title,
-            body, gfx::Image(), std::u16string(), url,
+            body, ui::ImageModel(), std::u16string(), url,
             message_center::NotifierId(
                 message_center::NotifierType::SYSTEM_COMPONENT,
                 "service.ads_service"),
