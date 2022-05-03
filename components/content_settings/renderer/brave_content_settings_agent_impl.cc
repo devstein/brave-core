@@ -250,38 +250,43 @@ bool BraveContentSettingsAgentImpl::IsCosmeticFilteringEnabled(
   blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
   GURL secondary_url = GURL();
 
-  const auto& rules = content_setting_rules_->cosmetic_filtering_rules;
   ContentSetting setting = CONTENT_SETTING_DEFAULT;
-  const GURL& primary_url = GetOriginOrURL(frame);
+  if (content_setting_rules_) {
+    const GURL& primary_url = GetOriginOrURL(frame);
 
-  for (const auto& rule : rules) {
-    if (rule.primary_pattern.Matches(primary_url) &&
-        rule.secondary_pattern.Matches(secondary_url)) {
-      setting = rule.GetContentSetting();
-      break;
+    for (const auto& rule : content_setting_rules_->cosmetic_filtering_rules) {
+      if (rule.primary_pattern.Matches(primary_url) &&
+          rule.secondary_pattern.Matches(secondary_url)) {
+        setting = rule.GetContentSetting();
+        break;
+      }
     }
   }
 
   return base::FeatureList::IsEnabled(
              brave_shields::features::kBraveAdblockCosmeticFiltering) &&
          !IsBraveShieldsDown(frame, secondary_url) &&
-         (setting != CONTENT_SETTING_ALLOW);
+         (setting == CONTENT_SETTING_BLOCK);
 }
 
 bool BraveContentSettingsAgentImpl::IsFirstPartyCosmeticFilteringEnabled(
     const GURL& url) {
+  if (!IsCosmeticFilteringEnabled(url))
+    return false;
+
   blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
   GURL secondary_url = GURL("https://firstParty/");
 
-  const auto& rules = content_setting_rules_->cosmetic_filtering_rules;
   ContentSetting setting = CONTENT_SETTING_DEFAULT;
-  const GURL& primary_url = GetOriginOrURL(frame);
+  if (content_setting_rules_) {
+    const GURL& primary_url = GetOriginOrURL(frame);
 
-  for (const auto& rule : rules) {
-    if (rule.primary_pattern.Matches(primary_url) &&
-        rule.secondary_pattern.Matches(secondary_url)) {
-      setting = rule.GetContentSetting();
-      break;
+    for (const auto& rule : content_setting_rules_->cosmetic_filtering_rules) {
+      if (rule.primary_pattern.Matches(primary_url) &&
+          rule.secondary_pattern.Matches(secondary_url)) {
+        setting = rule.GetContentSetting();
+        break;
+      }
     }
   }
 
