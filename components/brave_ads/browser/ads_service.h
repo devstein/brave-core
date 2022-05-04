@@ -11,7 +11,6 @@
 
 #include "base/callback_forward.h"
 #include "base/observer_list.h"
-#include "base/time/time.h"
 #include "bat/ads/public/interfaces/ads.mojom.h"
 #include "brave/components/brave_adaptive_captcha/buildflags/buildflags.h"
 #include "brave/components/brave_ads/browser/ads_service_observer.h"

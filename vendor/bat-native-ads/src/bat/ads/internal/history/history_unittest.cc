@@ -6,7 +6,6 @@
 #include "bat/ads/internal/history/history.h"
 
 #include "base/containers/circular_deque.h"
-#include "base/time/time.h"
 #include "bat/ads/ad_notification_info.h"
 #include "bat/ads/history_info.h"
 #include "bat/ads/history_item_info.h"
